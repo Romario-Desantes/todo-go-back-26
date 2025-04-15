@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"errors"
 	"log"
 	"net/http"
 
@@ -23,17 +22,21 @@ func NewTaskController(ts app.TaskService) TaskController {
 
 func (c TaskController) Save() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		user, err := requests.Bind(r, requests.RegisterRequest{}, domain.User{})
+		task, err := requests.Bind(r, requests.TaskRequest{}, domain.Task{})
 		if err != nil {
-			log.Printf("AuthController: %s", err)
-			BadRequest(w, errors.New("invalid request body"))
+			log.Printf("TaskController: %s", err)
+			BadRequest(w, err)
 			return
 		}
 
-		user, token, err := c.authService.Register(user)
+		task.Status = domain.TaskNew
+		user := r.Context().Value(UserKey).(domain.User)
+		task.UserId = user.Id
+
+		task, err = c.taskService.Save(task)
 		if err != nil {
-			log.Printf("AuthController: %s", err)
-			BadRequest(w, err)
+			log.Printf("TaskController: %s", err)
+			InternalServerError(w, err)
 			return
 		}
 
