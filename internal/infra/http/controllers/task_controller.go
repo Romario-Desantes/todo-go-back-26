@@ -40,7 +40,8 @@ func (c TaskController) Save() http.HandlerFunc {
 			return
 		}
 
-		var authDto resources.AuthDto
-		Success(w, authDto.DomainToDto(token, user))
+		var taskDto resources.TaskDto
+		taskDto = taskDto.DomainToDto(task)
+		Success(w, taskDto)
 	}
 }
