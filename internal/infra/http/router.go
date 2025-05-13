@@ -10,7 +10,9 @@ import (
 
 	"github.com/BohdanBoriak/boilerplate-go-back/config"
 	"github.com/BohdanBoriak/boilerplate-go-back/config/container"
+	"github.com/BohdanBoriak/boilerplate-go-back/internal/app"
 	"github.com/BohdanBoriak/boilerplate-go-back/internal/infra/http/controllers"
+	"github.com/BohdanBoriak/boilerplate-go-back/internal/infra/http/middlewares"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 
@@ -102,7 +104,8 @@ func UserRouter(r chi.Router, uc controllers.UserController) {
 	})
 }
 
-func TaskRouter(r chi.Router, tc controllers.TaskController) {
+func TaskRouter(r chi.Router, tc controllers.TaskController, ts app.TaskService) {
+	tpom := middlewares.PathObject("taskId", controllers.TaskKey, ts)
 	r.Route("/tasks", func(apiRouter chi.Router) {
 		apiRouter.Post(
 			"/",

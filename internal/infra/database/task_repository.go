@@ -49,6 +49,18 @@ func (r taskRepository) Save(t domain.Task) (domain.Task, error) {
 	return t, nil
 }
 
+func (r taskRepository) Find(id uint64) (domain.Task, error) {
+	var t task
+
+	err := r.coll.Find(db.Cond{
+		"id":           id,
+		"deleted_date": nil,
+	}).One(&t)
+	if err != nil {
+		return domain.Task{}, err
+	}
+}
+
 func (r taskRepository) mapDomainToModel(t domain.Task) task {
 	return task{
 		Id:          t.Id,
