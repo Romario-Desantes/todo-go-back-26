@@ -1,4 +1,4 @@
 ALTER TABLE
     public.tasks
 ADD
-    COLUMN user_id REFERENCES public.users(id);
+    COLUMN user_id integer REFERENCES public.users(id);
