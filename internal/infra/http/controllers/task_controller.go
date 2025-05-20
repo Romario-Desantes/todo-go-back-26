@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"errors"
 	"log"
 	"net/http"
 
@@ -46,27 +47,36 @@ func (c TaskController) Save() http.HandlerFunc {
 	}
 }
 
-func (c TaskController) Update() http.HandlerFunc {
+func (c TaskController) Find() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		task, err := requests.Bind(r, requests.TaskRequest{}, domain.Task{})
-		if err != nil {
-			log.Printf("TaskController: %s", err)
-			BadRequest(w, err)
-			return
-		}
-
+		task := r.Context().Value(TaskKey).(domain.Task)
 		user := r.Context().Value(UserKey).(domain.User)
-		task.UserId = user.Id
 
-		task, err = c.taskService.Save(task)
-		if err != nil {
-			log.Printf("TaskController: %s", err)
-			InternalServerError(w, err)
+		if task.UserId != user.Id {
+			err := errors.New("access denied")
+			Forbidden(w, err)
 			return
 		}
 
 		var taskDto resources.TaskDto
 		taskDto = taskDto.DomainToDto(task)
 		Success(w, taskDto)
+	}
+}
+
+func (c TaskController) FindAll() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		user := r.Context().Value(UserKey).(domain.User)
+
+		tasks, err := c.taskService.FindAll(user.Id)
+		if err != nil {
+			log.Printf("TaskController.FindAll(c.taskService.FindAll): %s", err)
+			InternalServerError(w, err)
+			return
+		}
+
+		var taskDto resources.TaskDto
+		tasksDto := taskDto.DomainToDtoCollection(tasks)
+		Success(w, tasksDto)
 	}
 }

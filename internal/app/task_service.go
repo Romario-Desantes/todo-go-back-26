@@ -9,6 +9,8 @@ import (
 
 type TaskService interface {
 	Save(t domain.Task) (domain.Task, error)
+	Find(id uint64) (interface{}, error)
+	FindAll(uId uint64) ([]domain.Task, error)
 }
 
 type taskService struct {
@@ -39,4 +41,14 @@ func (s taskService) Find(id uint64) (interface{}, error) {
 	}
 
 	return task, nil
+}
+
+func (s taskService) FindAll(uId uint64) ([]domain.Task, error) {
+	tasks, err := s.taskRepo.FindAllTasks(uId)
+	if err != nil {
+		log.Printf("taskService.FindAll(s.taskRepo.FindAllTasks): %s", err)
+		return nil, err
+	}
+
+	return tasks, nil
 }

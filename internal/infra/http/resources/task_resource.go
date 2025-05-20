@@ -25,3 +25,12 @@ func (d TaskDto) DomainToDto(t domain.Task) TaskDto {
 		Status:      t.Status,
 	}
 }
+
+func (d TaskDto) DomainToDtoCollection(ts []domain.Task) []TaskDto {
+	tasksDto := make([]TaskDto, len(ts))
+	for i, t := range ts {
+		tasksDto[i] = d.DomainToDto(t)
+	}
+
+	return tasksDto
+}

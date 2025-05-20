@@ -52,7 +52,7 @@ func Router(cont container.Container) http.Handler {
 				apiRouter.Use(cont.AuthMw)
 
 				UserRouter(apiRouter, cont.UserController)
-				TaskRouter(apiRouter, cont.TaskController)
+				TaskRouter(apiRouter, cont.TaskController, cont.TaskService)
 				apiRouter.Handle("/*", NotFoundJSON())
 			})
 		})
@@ -110,6 +110,10 @@ func TaskRouter(r chi.Router, tc controllers.TaskController, ts app.TaskService)
 		apiRouter.Post(
 			"/",
 			tc.Save(),
+		)
+		apiRouter.With(tpom).Get(
+			"/{taskId}",
+			tc.Find(),
 		)
 	})
 }
