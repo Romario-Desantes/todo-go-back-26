@@ -30,3 +30,13 @@ func (s taskService) Save(t domain.Task) (domain.Task, error) {
 
 	return task, nil
 }
+
+func (s taskService) Find(id uint64) (interface{}, error) {
+	task, err := s.taskRepo.Find(id)
+	if err != nil {
+		log.Printf("taskService.Find(s.taskRepo.Find): %s", err)
+		return domain.Task{}, err
+	}
+
+	return task, nil
+}

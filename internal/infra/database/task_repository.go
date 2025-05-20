@@ -23,6 +23,7 @@ type task struct {
 
 type TaskRepository interface {
 	Save(t domain.Task) (domain.Task, error)
+	Find(id uint64) (domain.Task, error)
 }
 
 type taskRepository struct {
@@ -59,6 +60,8 @@ func (r taskRepository) Find(id uint64) (domain.Task, error) {
 	if err != nil {
 		return domain.Task{}, err
 	}
+
+	return r.mapModelToDomain(t), nil
 }
 
 func (r taskRepository) mapDomainToModel(t domain.Task) task {
