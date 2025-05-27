@@ -80,3 +80,59 @@ func (c TaskController) FindAll() http.HandlerFunc {
 		Success(w, tasksDto)
 	}
 }
+
+func (c TaskController) Update() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		task, err := requests.Bind(r, requests.TaskRequest{}, domain.Task{})
+		if err != nil {
+			log.Printf("TaskController: %s", err)
+			BadRequest(w, err)
+			return
+		}
+
+		user := r.Context().Value(UserKey).(domain.User)
+		taskExists := r.Context().Value(TaskKey).(domain.Task)
+		if taskExists.UserId != user.Id {
+			err = errors.New("access denied")
+			Forbidden(w, err)
+			return
+		}
+
+		taskExists.Title = task.Title
+		taskExists.Description = task.Description
+		taskExists.Date = task.Date
+
+		task, err = c.taskService.Update(taskExists)
+		if err != nil {
+			log.Printf("TaskController: %s", err)
+			InternalServerError(w, err)
+			return
+		}
+
+		var taskDto resources.TaskDto
+		taskDto = taskDto.DomainToDto(task)
+		Success(w, taskDto)
+	}
+}
+
+func (c TaskController) Delete() http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		task := r.Context().Value(TaskKey).(domain.Task)
+		user := r.Context().Value(UserKey).(domain.User)
+
+		if task.UserId != user.Id {
+			err := errors.New("access denied")
+			Forbidden(w, err)
+			return
+		}
+
+		err := c.taskService.Delete(task.Id)
+		if err != nil {
+			log.Printf("TaskController: %s", err)
+			InternalServerError(w, err)
+			return
+		}
+
+		noContent(w)
+	}
+}
