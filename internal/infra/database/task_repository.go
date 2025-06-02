@@ -24,9 +24,11 @@ type task struct {
 type TaskRepository interface {
 	Save(t domain.Task) (domain.Task, error)
 	Find(id uint64) (domain.Task, error)
-	FindAllTasks(uId uint64) ([]domain.Task, error)
+	FindAllTasks(uId uint64, status *domain.TaskStatus, date *time.Time) ([]domain.Task, error)
 	Update(t domain.Task) (domain.Task, error)
 	Delete(id uint64) error
+
+	UpdateStatus(id uint64, status domain.TaskStatus) (domain.Task, error)
 }
 
 type taskRepository struct {
@@ -67,13 +69,30 @@ func (r taskRepository) Find(id uint64) (domain.Task, error) {
 	return r.mapModelToDomain(t), nil
 }
 
-func (r taskRepository) FindAllTasks(uId uint64) ([]domain.Task, error) {
+func (r taskRepository) FindAllTasks(uId uint64, status *domain.TaskStatus, date *time.Time) ([]domain.Task, error) {
 	var ts []task
 
-	err := r.coll.Find(db.Cond{
+	// Базові умови
+	cond := db.Cond{
 		"user_id":      uId,
 		"deleted_date": nil,
-	}).All(&ts)
+	}
+
+	// Додатковий фільтр по статусу
+	if status != nil {
+		cond["status"] = *status
+	}
+
+	// Додатковий фільтр по даті
+	if date != nil {
+		start := time.Date(date.Year(), date.Month(), date.Day(), 0, 0, 0, 0, time.UTC)
+		end := start.Add(24 * time.Hour)
+		cond["date >="] = start
+		cond["date <"] = end
+	}
+
+	// Запит до бази з умовами
+	err := r.coll.Find(cond).All(&ts)
 	if err != nil {
 		return nil, err
 	}
@@ -93,6 +112,20 @@ func (r taskRepository) Update(t domain.Task) (domain.Task, error) {
 
 func (r taskRepository) Delete(id uint64) error {
 	return r.coll.Find(db.Cond{"id": id, "deleted_date": nil}).Update(map[string]interface{}{"deleted_date": time.Now()})
+}
+
+func (r taskRepository) UpdateStatus(id uint64, status domain.TaskStatus) (domain.Task, error) {
+	// Оновлюємо тільки статус і дату оновлення
+	err := r.coll.Find(db.Cond{"id": id, "deleted_date": nil}).Update(map[string]interface{}{
+		"status":       status,
+		"updated_date": time.Now(),
+	})
+	if err != nil {
+		return domain.Task{}, err
+	}
+
+	// Повертаємо оновлений запис
+	return r.Find(id)
 }
 
 func (r taskRepository) mapDomainToModel(t domain.Task) task {

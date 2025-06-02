@@ -1,7 +1,9 @@
 package app
 
 import (
+	"errors"
 	"log"
+	"time"
 
 	"github.com/BohdanBoriak/boilerplate-go-back/internal/domain"
 	"github.com/BohdanBoriak/boilerplate-go-back/internal/infra/database"
@@ -10,9 +12,17 @@ import (
 type TaskService interface {
 	Save(t domain.Task) (domain.Task, error)
 	Find(id uint64) (interface{}, error)
-	FindAll(uId uint64) ([]domain.Task, error)
+
+	//update
+	FindAll(uId uint64, status *domain.TaskStatus, date *time.Time) ([]domain.Task, error)
+	//update
+
 	Update(t domain.Task) (domain.Task, error)
 	Delete(id uint64) error
+
+	//new
+	UpdateStatus(taskID uint64, userID uint64, status domain.TaskStatus) (domain.Task, error)
+	//new
 }
 
 type taskService struct {
@@ -45,8 +55,8 @@ func (s taskService) Find(id uint64) (interface{}, error) {
 	return task, nil
 }
 
-func (s taskService) FindAll(uId uint64) ([]domain.Task, error) {
-	tasks, err := s.taskRepo.FindAllTasks(uId)
+func (s taskService) FindAll(uId uint64, status *domain.TaskStatus, date *time.Time) ([]domain.Task, error) {
+	tasks, err := s.taskRepo.FindAllTasks(uId, status, date)
 	if err != nil {
 		log.Printf("taskService.FindAll(s.taskRepo.FindAllTasks): %s", err)
 		return nil, err
@@ -73,4 +83,21 @@ func (s taskService) Delete(id uint64) error {
 	}
 
 	return nil
+}
+
+func (s taskService) UpdateStatus(taskID uint64, userID uint64, status domain.TaskStatus) (domain.Task, error) {
+	// знаходимо задачу
+	task, err := s.taskRepo.Find(taskID)
+	if err != nil {
+		return domain.Task{}, err
+	}
+
+	// перевіряємо власника
+	if task.UserId != userID {
+		return domain.Task{}, errors.New("access denied")
+	}
+
+	task.Status = status
+
+	return s.taskRepo.Update(task)
 }

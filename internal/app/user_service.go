@@ -1,9 +1,10 @@
 package app
 
 import (
+	"log"
+
 	"github.com/BohdanBoriak/boilerplate-go-back/internal/domain"
 	"github.com/BohdanBoriak/boilerplate-go-back/internal/infra/database"
-	"log"
 )
 
 type UserService interface {
